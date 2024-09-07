@@ -43,7 +43,7 @@ class UserDetailAPIView(APIView):
     
     def get(self, request, username):
         user = get_object_or_404(get_user_model(), username=username)
-        serializer = UserSerializer(user)
+        serializer = UserSerializer(user, context={'request': request})
         return Response(serializer.data, status=200)
     
     def put(self, request, username):
