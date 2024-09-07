@@ -10,7 +10,7 @@ from .serializers import UserSerializer
 
 class RegisterAPIView(APIView):
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        serializer = UserSerializer(data=request.data, context={'request': request})
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             data = {
@@ -24,10 +24,21 @@ class RegisterAPIView(APIView):
                 return Response(response.json(), status=200)
             else:
                 return Response(response.text, status=response.status_code)
+        return Response(serializer.errors, status=400)
 
 class UserDetailAPIView(APIView):
     def get(self, request, username):
         user = get_object_or_404(get_user_model(), username=username)
         serializer = UserSerializer(user)
-        return Response(serializer.data)
-                
+        return Response(serializer.data, status=200)
+    
+    def put(self, request, username):
+        user = get_object_or_404(get_user_model(), username=username)
+        if request.user != user:
+            return Response({"error": "permission denied"}, status=403)
+        serializer = UserSerializer(instance=user, data=request.data, context={'request': request}, partial=True)
+        
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=200)
+        return Response(serializer.errors, status=400)

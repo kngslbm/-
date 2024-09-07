@@ -10,10 +10,18 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ('username', 'email', 'password1', 'password2', 'intro', "profile_image")
+    
+    def __init__(self, *args, **kwargs):
+        super(UserSerializer, self).__init__(*args, **kwargs)
+        # Exclude password fields on PUT requests
+        if self.context['request'].method == 'PUT':
+            self.fields.pop('password1', None)
+            self.fields.pop('password2', None)
         
     def validate(self, data):
-        if data["password1"] != data["password2"]:
-            raise serializers.ValidationError("password1 and password2 aren't matched")
+        if self.context['request'].method == 'POST':
+            if data["password1"] != data["password2"]:
+                raise serializers.ValidationError("password1 and password2 aren't matched")
         return data
     
     def create(self, validated_data):
@@ -30,3 +38,15 @@ class UserSerializer(serializers.ModelSerializer):
         
         user.save()
         return user
+    
+    def update(self, instance, validated_data):
+        profile_image = validated_data.pop('profile_image', None)
+        if profile_image:
+            instance.profile_image = profile_image
+
+        instance.username = validated_data.get("username", instance.username)
+        instance.email = validated_data.get("email", instance.email)
+        instance.intro = validated_data.get("intro", instance.intro)
+        
+        instance.save()
+        return instance
