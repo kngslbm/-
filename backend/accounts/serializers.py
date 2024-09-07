@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from django.contrib.auth import get_user_model
 
 class RegisterSerializer(serializers.ModelSerializer):
     password1 = serializers.CharField(write_only=True)
@@ -8,7 +8,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(required=False, allow_empty_file=True)
     
     class Meta:
-        model = User
+        model = get_user_model()
         fields = ('username', 'email', 'password1', 'password2', 'intro', "profile_image")
         
     def validate(self, data):
@@ -18,7 +18,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         profile_image = validated_data.pop('profile_image', None)
-        user = User(
+        user = get_user_model()(
             username=validated_data["username"],
             email=validated_data["email"],
             intro=validated_data.get("intro", None),
