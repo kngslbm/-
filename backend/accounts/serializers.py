@@ -50,3 +50,26 @@ class UserSerializer(serializers.ModelSerializer):
         
         instance.save()
         return instance
+    
+    
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password1 = serializers.CharField(write_only=True)
+    new_password2 = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        user = self.context['request'].user
+
+        if not user.check_password(data['old_password']):
+            raise serializers.ValidationError({"old_password": "Old password is incorrect."})
+
+        if data['new_password1'] != data['new_password2']:
+            raise serializers.ValidationError({"new_password2": "The two new passwords do not match."})
+
+        return data
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password1'])
+        user.save()
+        return user

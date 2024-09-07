@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 import requests
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, ChangePasswordSerializer
 
 class RegisterAPIView(APIView):
     def post(self, request):
@@ -55,4 +55,17 @@ class UserDetailAPIView(APIView):
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=200)
+        return Response(serializer.errors, status=400)
+    
+    
+class ChangePasswordAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "Password has been changed successfully."}, status=200)
+        
         return Response(serializer.errors, status=400)
