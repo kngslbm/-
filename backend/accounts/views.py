@@ -1,13 +1,16 @@
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import RegisterSerializer
+from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 import requests
 
+from .serializers import UserSerializer
+
 class RegisterAPIView(APIView):
     def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             data = {
@@ -21,3 +24,10 @@ class RegisterAPIView(APIView):
                 return Response(response.json(), status=200)
             else:
                 return Response(response.text, status=response.status_code)
+
+class UserDetailAPIView(APIView):
+    def get(self, request, username):
+        user = get_object_or_404(get_user_model(), username=username)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+                
