@@ -26,7 +26,9 @@ class RegisterAPIView(APIView):
                 return Response(response.text, status=response.status_code)
         return Response(serializer.errors, status=400)
 
-    def delete(self, request, username):
+    def delete(self, request):
+        self.permission_classes = [IsAuthenticated]
+        
         password = request.data.get("password")
         if not password:
             return Response({"error": "password is required"}, status=400)
