@@ -1,4 +1,4 @@
-
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
@@ -27,6 +27,8 @@ class RegisterAPIView(APIView):
         return Response(serializer.errors, status=400)
 
 class UserDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
     def get(self, request, username):
         user = get_object_or_404(get_user_model(), username=username)
         serializer = UserSerializer(user)
@@ -42,3 +44,13 @@ class UserDetailAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
+        
+    def delete(self, request, username):
+        password = request.data.get("password")
+        if not password:
+            return Response({"error": "password is required"}, status=400)
+        if not request.user.check_password(password):
+            return Response({"error": "password is incorrect"}, status=400)
+        request.user.delete()
+        return Response(status=204)
+    
