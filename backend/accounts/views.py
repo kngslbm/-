@@ -26,6 +26,16 @@ class RegisterAPIView(APIView):
                 return Response(response.text, status=response.status_code)
         return Response(serializer.errors, status=400)
 
+    def delete(self, request, username):
+        password = request.data.get("password")
+        if not password:
+            return Response({"error": "password is required"}, status=400)
+        if not request.user.check_password(password):
+            return Response({"error": "password is incorrect"}, status=400)
+        request.user.delete()
+        return Response(status=204)
+    
+    
 class UserDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -44,13 +54,3 @@ class UserDetailAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
-        
-    def delete(self, request, username):
-        password = request.data.get("password")
-        if not password:
-            return Response({"error": "password is required"}, status=400)
-        if not request.user.check_password(password):
-            return Response({"error": "password is incorrect"}, status=400)
-        request.user.delete()
-        return Response(status=204)
-    
