@@ -4,32 +4,6 @@ from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 
 
-class MockResponse:
-    status_code = 200
-
-    @staticmethod
-    def json():
-        return {"access": "test_access_token", "refresh": "test_refresh_token"}
-
-@pytest.mark.django_db
-def test_register_user(mocker):
-    # requests.post 모킹
-    mocker.patch('requests.post', return_value=MockResponse())
-
-    client = APIClient()
-    url = reverse("register")
-    response = client.post(url, {
-        "username": "testuser",
-        "email": "testuser@email.com",
-        "password1": "testpass123",
-        "password2": "testpass123",
-    }, format='json')
-
-    assert response.status_code == 200
-    assert "access" in response.data
-    assert "refresh" in response.data
-
-
 @pytest.mark.django_db
 class TestAccounts:
     
@@ -55,6 +29,13 @@ class TestAccounts:
             password=user_data["password1"]
         )
         return user
+
+    def test_register_user(self, client, user_data):
+        url = reverse("register")
+        response = client.post(url, user_data, format="json")
+        assert response.status_code == 200
+        assert "access" in response.data
+        assert "refresh" in response.data
 
     def test_signin(self, client, create_user, user_data):
         url = reverse("signin")
