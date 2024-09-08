@@ -1,24 +1,32 @@
 from rest_framework import serializers
-from .models import User
+from django.contrib.auth import get_user_model
 
-class RegisterSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     password1 = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
     intro = serializers.CharField(required=False, allow_blank=True)
     profile_image = serializers.ImageField(required=False, allow_empty_file=True)
     
     class Meta:
-        model = User
+        model = get_user_model()
         fields = ('username', 'email', 'password1', 'password2', 'intro', "profile_image")
+    
+    def __init__(self, *args, **kwargs):
+        super(UserSerializer, self).__init__(*args, **kwargs)
+        # Exclude password fields on PUT requests
+        if self.context['request'].method == 'PUT':
+            self.fields.pop('password1', None)
+            self.fields.pop('password2', None)
         
     def validate(self, data):
-        if data["password1"] != data["password2"]:
-            raise serializers.ValidationError("password1 and password2 aren't matched")
+        if self.context['request'].method == 'POST':
+            if data["password1"] != data["password2"]:
+                raise serializers.ValidationError("password1 and password2 aren't matched")
         return data
     
     def create(self, validated_data):
         profile_image = validated_data.pop('profile_image', None)
-        user = User(
+        user = get_user_model()(
             username=validated_data["username"],
             email=validated_data["email"],
             intro=validated_data.get("intro", None),
@@ -28,5 +36,40 @@ class RegisterSerializer(serializers.ModelSerializer):
         if profile_image:
             user.profile_image = profile_image
         
+        user.save()
+        return user
+    
+    def update(self, instance, validated_data):
+        profile_image = validated_data.pop('profile_image', None)
+        if profile_image:
+            instance.profile_image = profile_image
+
+        instance.username = validated_data.get("username", instance.username)
+        instance.email = validated_data.get("email", instance.email)
+        instance.intro = validated_data.get("intro", instance.intro)
+        
+        instance.save()
+        return instance
+    
+    
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password1 = serializers.CharField(write_only=True)
+    new_password2 = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        user = self.context['request'].user
+
+        if not user.check_password(data['old_password']):
+            raise serializers.ValidationError({"old_password": "Old password is incorrect."})
+
+        if data['new_password1'] != data['new_password2']:
+            raise serializers.ValidationError({"new_password2": "The two new passwords do not match."})
+
+        return data
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password1'])
         user.save()
         return user
