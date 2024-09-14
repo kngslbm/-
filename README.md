@@ -1,8 +1,8 @@
-## *Innternship Preonboarding Challenge Backend(Python)*
+## *Internship Preonboarding Challenge Backend(Python)*
 
 **DRF(Django REST framework)** 환경에서 **JWT** 기반의 회원 관리 로직입니다.
 
-**Pytest** 프레임워크를 사용하여 **Unit test** 코드를 작성하였습니다.
+**Pytest** 프레임워크를 사용하여 **Test Case**를 작성하였습니다.
 
 </br>
 
